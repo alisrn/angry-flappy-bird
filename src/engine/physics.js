@@ -34,7 +34,14 @@ export const addPipesAtLocation = (x, world, entities) => {
     Math.ceil(sizes[0] / 2),
     constants.PIPE_WIDTH,
     sizes[0],
-    { isStatic: true },
+    {
+      isSleeping: true,
+      collisionFilter:{
+        category: flyingCategory,
+        mask:defaultCategory,
+        group: -1,
+      }
+    },
   );
   let pipeDown = Matter.Bodies.rectangle(
     x,
@@ -120,8 +127,11 @@ const Physics = (entities, { touches, time, dispatch }) => {
 
       if (fireBody.position.x - constants.FIRE_SIZE / 2 > constants.MAX_WIDTH) {
         delete (entities[fire]);
+      } else if (entities.pipeDown && entities.pipeUp ? Matter.Bounds.overlaps(fireBody.bounds, entities.pipeDown.body.bounds) |
+        Matter.Bounds.overlaps(fireBody.bounds, entities.pipeUp.body.bounds) : false) {
+        entities.pipeUp.body.isSleeping = false;
+        delete (entities[fire]);
       } else
-        Matter.Body.applyForce(fireBody, fireBody.position, { x: fireBody.mass * world.gravity ? world.gravity.x : 0, y: fireBody.mass * world.gravity ? world.gravity.y : 0 })
         Matter.Body.translate(entities[fire].body, { x: 2, y: 0 })
     })
   }
@@ -149,11 +159,11 @@ const CreateFire = (state, { touches, dispatch }) => {
       constants.FIRE_SIZE,
       constants.FIRE_SIZE,
       {
-        /* isStatic: true, */
-        collisionFilter: {
+        isStatic: true,
+        collisionFilter:{
           category: flyingCategory,
+          mask:defaultCategory,
           group: -1,
-          mask: defaultCategory
         }
       },
     );
